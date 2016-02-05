@@ -1,0 +1,8 @@
+paredit-backward        C-M-b
+paredit-backward-up	C-M-u
+paredit-backward-down	C-M-p
+
+paredit-forward         C-M-f
+paredit-forward-up	C-M-n
+paredit-forward-down	C-M-d
+
