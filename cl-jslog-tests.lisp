@@ -68,6 +68,21 @@
             nil
             (funcall flt (make-item "ERROR" "msg")))))
 
+;; (deftest test-complex-filter ()
+;; 
+;;   (let* ((flt
+;;           (jslog::make-filter
+;;            '(and (equal @fields.level "ERROR")
+;;                  (= @number 123 )))))
+    
+;;     (should be eql
+;;             t
+;;             (funcall flt (make-item "INFO" "msg")))
+;;     (should be eql
+;;             nil
+;;             (funcall flt (make-item "ERROR" "msg")))))
+
+
 
 (deftest test-get-function ()
   (should be null
