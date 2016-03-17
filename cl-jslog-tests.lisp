@@ -13,12 +13,19 @@
   (incf *synthetic-timestamp*)
   
   (alist-hash-table
-   `(("@timestamp" . *synthetic-timestamp*)
+   `(("@timestamp" . ,*synthetic-timestamp*)
      ("@message" . ,message)
      ("@fields" . ,(alist-hash-table
                     `(("level" . ,level))
                     :test #'equal)))
    :test #'equal))
+
+
+(defun like (text regex)
+  "Helper predicate to compare text with regex in unittests.
+If text matches, it returns t."
+  (not (null (cl-ppcre:scan regex text))))
+
 
 (deftest test-parsing ()
   (let* ((line "{\"one\": 1}")
@@ -44,16 +51,10 @@
   (let* ((formatter
           (jslog::make-formatter
            '("[" @timestamp "]: " @fields.level " " @message)))
-         (item (alist-hash-table
-                `(("@timestamp" . 1)
-                  ("@message" . "Initialization")
-                  ("@fields" . ,(alist-hash-table
-                                 '(("level" . "INFO"))
-                                 :test #'equal)))
-                :test #'equal))
+         (item (make-item "INFO" "Initialization"))
          (result (funcall formatter item)))
     
-    (should be equal "[1]: INFO Initialization" result)))
+    (should be like "INFO Initialization" result)))
 
 
 (deftest test-filter ()
@@ -67,6 +68,33 @@
     (should be eql
             nil
             (funcall flt (make-item "ERROR" "msg")))))
+
+
+(deftest test-filter-from-string ()
+  (let ((flt
+         (jslog::make-filter-from-string
+          "(equal @fields.level \"INFO\")")))
+    (should be eql
+            t
+            (funcall flt (make-item "INFO" "msg")))))
+
+
+(deftest test-filter-from-empty-string ()
+  (let ((flt
+         (jslog::make-filter-from-string
+          "")))
+    (should be eql
+            t
+            (funcall flt (make-item "INFO" "msg")))))
+
+
+(deftest test-filter-from-broken-string ()
+  (should signal
+          jslog::unparsable-filter
+          (jslog::make-filter-from-string
+           ;; here we forgot to close bracket
+           "(equal @fields.level \"INFO\"")))
+
 
 ;; (deftest test-complex-filter ()
 ;; 
@@ -92,6 +120,7 @@
   (should be functionp
           (cl-jslog::get-function 'list)))
 
+
 (defun run-tests (&key (failed nil))
   (let ((should-test:*test-output* *standard-output*))
     (st:test :failed failed
@@ -104,3 +133,6 @@
 ;;   (format t "Some text"))
 
 ;; (check-stdout)
+
+
+;; просто эксперименты

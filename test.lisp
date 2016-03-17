@@ -34,3 +34,13 @@
           (declare (type fixnum s i))
           (setf s (+ s i)))
         (print s)))
+
+
+
+(alexandria:with-input-from-file (stream "/tmp/some.org")
+  (loop
+     :for char = (read-char stream nil)
+     :if (null char)
+     :do (return (format t "END"))
+     :else
+     :do (format t "~a~%" char)))

@@ -1,7 +1,10 @@
 (require 'asdf)
 
 (defpackage :build
-  (:use :common-lisp :ext))
+  (:use
+   :common-lisp
+   #+ecl
+   :ext))
 
 (in-package :build)
 

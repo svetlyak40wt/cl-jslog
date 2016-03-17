@@ -3,5 +3,8 @@
                 :author "Alexander Artemenko <svetlyak.40wt@gmail.com>"
                                         ;                :depends-on (#:inferior-shell)
                 :entry-point "cl-jslog:main"
-                :depends-on (#:jonathan #:split-sequence #:asdf)
+                :depends-on (#:asdf
+                             #:unix-opts
+                             #:jonathan
+                             #:split-sequence)
                 :components ((:file "cl-jslog")))
