@@ -3,6 +3,8 @@
 (defpackage :build
   (:use
    :common-lisp
+   #+sbcl
+   :sb-ext
    #+ecl
    :ext))
 
@@ -32,4 +34,4 @@
 (ql:quickload +project-system-name+)
 (asdf:operate 'asdf:program-op +project-system-name+)
 
-(quit 0)
+(quit)

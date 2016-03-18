@@ -1,6 +1,11 @@
 (defpackage #:cl-jslog
   (:nicknames #:jslog)
-  (:use #:cl #:split-sequence)
+  (:use #:cl
+        #:split-sequence
+        #+sbcl
+        :sb-ext
+        #+ecl
+        :ext)
   (:export #:main))
 
 (in-package #:cl-jslog)
@@ -9,7 +14,7 @@
 
 
 (defvar *default-format*
-  "(\"[\" @timestamp \"]: \" @fields.level @message)")
+  "(\"[\" @timestamp \"]: \" @fields.level \" \" @message)")
 
 (defvar *default-filter* "()")
 
@@ -81,16 +86,24 @@
   (format nil "Error ~a occured~%" e))
 
 
-(define-condition unparsable-filter (error)
+(define-condition unparsable-expression (error)
   ((text :initarg :text :reader text)))
+
+
+(defun parse-lisp-sexps (str)
+  (restart-case
+      (handler-case (read-from-string str nil)
+        (end-of-file ()
+          (error (make-condition 'unparsable-expression
+                                 :text str))))
+    (use-value (new-value)
+      :report "Give new expression and try again"
+      (parse-lisp-sexps new-value))))
 
 
 (defun make-filter-from-string (str)
 
-  (let ((rules (handler-case (read-from-string str nil)
-                 (end-of-file ()
-                   (error (make-condition 'unparsable-filter
-                                          :text str))))))
+  (let ((rules (parse-lisp-sexps str)))
     (if rules
         (make-filter rules)
         (lambda (item)
@@ -108,7 +121,8 @@
      as line = (funcall get-next-line)
      while line
      do (let ((item (parse line)))
-          (process item formatter))))
+          (when (funcall filter item)
+            (process item formatter)))))
 
 
 (defun get-line-from-stdin ()
@@ -132,6 +146,15 @@
    :arg-parser #'identity))
 
 
+(defun output-error-and-exit
+    (&optional (error-message "Syntax error in expression \"~A\"~%" ))
+  (lambda (c)
+   "Handler to handle 'unparsable-expression conditions"
+   (format t error-message
+           (text c))
+   (quit)))
+
+
 (defun real-main (&optional args)
   (let* ((args (handler-case (opts:get-opts args)
                  (opts:unknown-option (condition)
@@ -146,12 +169,26 @@
                            (opts:raw-arg condition)
                            (opts:option condition)))))
          (format-str (getf args :format *default-format*))
-         (filter-str (getf args :filter *default-filter*)))
+         (formatter (handler-bind ((unparsable-expression
+                                    (output-error-and-exit
+                                     "Syntax error in format expression \"~A\"~%")))
+                      (make-formatter (parse-lisp-sexps format-str))))
+         
+         (filter-str (getf args :filter *default-filter*))
+         (filter (handler-bind ((unparsable-expression
+                     (output-error-and-exit
+                      "Syntax error in filter expression \"~A\"~%")))
+                   (make-filter-from-string filter-str))))
     
-    (format t "Called with arguments:\"~a\"~%" args)
+    ;; (format t "Called with arguments:\"~a\"~%" args)
+    ;; (format t "filter-str is:\"~a\"~%" filter-str)
+    ;; (format t "filter is:\"~a\"~%" filter)
+    ;; (format t "format-str is:\"~a\"~%" format-str)
+    ;; (format t "formatter:\"~a\"~%" formatter)
+
     (process-lines #'get-line-from-stdin
-                   (make-filter (read-from-string filter-str))
-                   (make-formatter (read-from-string format-str)))))
+                   formatter
+                   filter)))
 
 (defun main ()
   (real-main uiop:*command-line-arguments*))

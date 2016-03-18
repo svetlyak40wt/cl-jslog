@@ -1,2 +1,4 @@
 /lisp/
 /jslog
+/jslog.sbcl
+/test-conditions.lisp

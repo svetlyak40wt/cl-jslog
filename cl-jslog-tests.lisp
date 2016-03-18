@@ -78,7 +78,6 @@ If text matches, it returns t."
             t
             (funcall flt (make-item "INFO" "msg")))))
 
-
 (deftest test-filter-from-empty-string ()
   (let ((flt
          (jslog::make-filter-from-string
@@ -90,10 +89,28 @@ If text matches, it returns t."
 
 (deftest test-filter-from-broken-string ()
   (should signal
-          jslog::unparsable-filter
+          jslog::unparsable-expression
           (jslog::make-filter-from-string
            ;; here we forgot to close bracket
            "(equal @fields.level \"INFO\"")))
+
+
+(deftest test-broken-filter-can-be-replaced-with-good-one ()
+  (let* ((bad-filter "(equal @fields.level \"INFO\"") ;; here we forgot to close bracket
+         (good-filter "(equal @fields.level \"INFO\")")
+         (flt (handler-bind
+                  ((jslog::unparsable-expression
+                    (lambda (c)
+                      (use-value good-filter))))
+                (jslog::make-filter-from-string
+                 bad-filter))))
+
+    ;;; after this manipulation, good filter should be
+    ;;; returned as expected
+    (should be eql
+            t
+            (funcall flt (make-item "INFO" "msg")))))
+
 
 
 ;; (deftest test-complex-filter ()
