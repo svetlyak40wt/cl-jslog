@@ -191,4 +191,5 @@
                    filter)))
 
 (defun main ()
-  (real-main uiop:*command-line-arguments*))
+  (real-main uiop:*command-line-arguments*)
+  (exit))
