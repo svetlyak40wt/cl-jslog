@@ -15,10 +15,11 @@
 (defvar +program-name+ "jslog")
 (defvar +program-version+ "0.1.0")
 
-(defvar *default-format*
+(defvar +default-format+
   "(\"[\" @timestamp \"]: \" @fields.level \" \" @message)")
 
-(defvar *default-filter* "()")
+(defvar +default-filter+ "()")
+(defvar +example-filter+ "(equal @fields.level \"ERROR\")")
 
 
 ;(defvar *line* "{\"@fields\": {\"uuid\": \"d9e4d994-9807-455f-873d-863b2ee5ce94\", \"level\": \"INFO\", \"status_code\": 200, \"content_type\": \"text/html; charset=utf-8\", \"path\": \"/\", \"method\": \"GET\", \"name\": \"django.http\"}, \"@timestamp\": \"2016-01-29T09:10:31+00:00\", \"@source_host\": \"abb31f44d577\", \"@message\": \"Request processed\"}")
@@ -141,12 +142,16 @@
    :short #\v
    :long "version")
   (:name :filter
-   :description "expression to filter log items"
+   :description (format nil
+                        "expression to filter log items. Default: no filter. Example: ~a"
+                        +example-filter+)
    :short #\f
    :long "filter"
    :arg-parser #'identity)
   (:name :format
-   :description "expression to format log items"
+   :description (format nil
+                        "expression to format log items. Default: ~a"
+                        +default-format+)
    :short #\f
    :long "format"
    :arg-parser #'identity))
@@ -189,13 +194,13 @@
          (show-help (getf args :help nil))
          (show-version (getf args :version nil))
          
-         (format-str (getf args :format *default-format*))
+         (format-str (getf args :format +default-format+))
          (formatter (handler-bind ((unparsable-expression
                                     (output-error-and-exit
                                      "Syntax error in format expression \"~A\"~%")))
                       (make-formatter (parse-lisp-sexps format-str))))
          
-         (filter-str (getf args :filter *default-filter*))
+         (filter-str (getf args :filter +default-filter+))
          (filter (handler-bind ((unparsable-expression
                                  (output-error-and-exit
                                   "Syntax error in filter expression \"~A\"~%")))
