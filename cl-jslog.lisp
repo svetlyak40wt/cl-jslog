@@ -216,5 +216,7 @@
                             filter)))))
 
 (defun main ()
-  (real-main uiop:*command-line-arguments*)
+  (handler-case (real-main uiop:*command-line-arguments*)
+    (SB-SYS:INTERACTIVE-INTERRUPT ()
+      (progn (format t "~%Exiting because of the interrupt.~%"))))
   (exit))
