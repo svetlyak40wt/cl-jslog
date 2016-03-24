@@ -12,6 +12,8 @@
 
 (proclaim '(optimize (debug 3)))
 
+(defvar +program-name+ "jslog")
+(defvar +program-version+ "0.1.0")
 
 (defvar *default-format*
   "(\"[\" @timestamp \"]: \" @fields.level \" \" @message)")
@@ -134,6 +136,10 @@
    :description "print this help text"
    :short #\h
    :long "help")
+  (:name :version
+   :description "print version number and exit"
+   :short #\v
+   :long "version")
   (:name :filter
    :description "expression to filter log items"
    :short #\f
@@ -144,6 +150,14 @@
    :short #\f
    :long "format"
    :arg-parser #'identity))
+
+
+(defun print-help ()
+  (unix-opts:describe :usage-of +program-name+))
+
+
+(defun print-version ()
+  (format t "~a ~a~%" +program-name+ +program-version+))
 
 
 (defun output-error-and-exit
@@ -158,16 +172,23 @@
 (defun real-main (&optional args)
   (let* ((args (handler-case (opts:get-opts args)
                  (opts:unknown-option (condition)
-                   (format t "warning: ~s option is unknown!~%" (opts:option condition)))
+                   (format t "error: ~s option is unknown!~%"
+                           (opts:option condition))
+                   (quit))
                 
                  (opts:missing-arg (condition)
                    (format t "fatal: option ~s needs an argument!~%"
-                           (opts:option condition)))
+                           (opts:option condition))
+                   (quit))
                 
                  (opts:arg-parser-failed (condition)
                    (format t "fatal: cannot parse ~s as argument of ~s~%"
                            (opts:raw-arg condition)
-                           (opts:option condition)))))
+                           (opts:option condition))
+                   (quit))))
+         (show-help (getf args :help nil))
+         (show-version (getf args :version nil))
+         
          (format-str (getf args :format *default-format*))
          (formatter (handler-bind ((unparsable-expression
                                     (output-error-and-exit
@@ -176,8 +197,8 @@
          
          (filter-str (getf args :filter *default-filter*))
          (filter (handler-bind ((unparsable-expression
-                     (output-error-and-exit
-                      "Syntax error in filter expression \"~A\"~%")))
+                                 (output-error-and-exit
+                                  "Syntax error in filter expression \"~A\"~%")))
                    (make-filter-from-string filter-str))))
     
     ;; (format t "Called with arguments:\"~a\"~%" args)
@@ -186,9 +207,13 @@
     ;; (format t "format-str is:\"~a\"~%" format-str)
     ;; (format t "formatter:\"~a\"~%" formatter)
 
-    (process-lines #'get-line-from-stdin
-                   formatter
-                   filter)))
+    (cond (show-help (print-help)
+                     (exit))
+          (show-version (print-version)
+                        (exit))
+          (t (process-lines #'get-line-from-stdin
+                            formatter
+                            filter)))))
 
 (defun main ()
   (real-main uiop:*command-line-arguments*)
