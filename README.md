@@ -14,7 +14,10 @@ tail -f some.log | jslog <filter> <format>
 
 ## How to compile
 
-TODO: write instruction
+```
+./bootstrap.ecl
+./build.ecl
+```
 
 ## How to test
 
