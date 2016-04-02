@@ -222,6 +222,7 @@
 
 (defun main ()
   (handler-case (real-main uiop:*command-line-arguments*)
+    #+sbcl
     (SB-SYS:INTERACTIVE-INTERRUPT ()
       (progn (format t "~%Exiting because of the interrupt.~%"))))
   (exit))
