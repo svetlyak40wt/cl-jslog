@@ -1,4 +1,5 @@
 #!/bin/bash
 
-ecl -load lisp/setup.lisp \
+ecl -norc \
+    -load lisp/setup.lisp \
     -load build.lisp
